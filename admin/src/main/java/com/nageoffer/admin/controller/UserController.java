@@ -31,6 +31,7 @@ public class UserController {
 //        }else {
 //            return new Result<UserRespDTO>().setCode("0").setData(result);
 //        }
+        System.out.println("test");
         return Results.success(userService.getUserByUsername(username));//优化后的代码 为什么这么写
     }
 }
