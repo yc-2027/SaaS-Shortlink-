@@ -5,7 +5,17 @@
     <option name="originalFiles">
       <list>
         <option value="$PROJECT_DIR$/pom.xml" />
+        <option value="$PROJECT_DIR$/../mageshortlink/pom.xml" />
       </list>
+    </option>
+    <option name="ignoredFiles">
+      <set>
+        <option value="$PROJECT_DIR$/../mageshortlink/admin/pom.xml" />
+        <option value="$PROJECT_DIR$/../mageshortlink/aggregation/pom.xml" />
+        <option value="$PROJECT_DIR$/../mageshortlink/gateway/pom.xml" />
+        <option value="$PROJECT_DIR$/../mageshortlink/pom.xml" />
+        <option value="$PROJECT_DIR$/../mageshortlink/project/pom.xml" />
+      </set>
     </option>
     <option name="workspaceImportForciblyTurnedOn" value="true" />
   </component>
