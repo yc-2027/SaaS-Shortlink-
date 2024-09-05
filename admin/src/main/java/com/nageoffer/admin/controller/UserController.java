@@ -6,12 +6,11 @@ package com.nageoffer.admin.controller;
 
 import com.nageoffer.admin.common.convention.result.Result;
 import com.nageoffer.admin.common.convention.result.Results;
+import com.nageoffer.admin.dto.req.UserRegisterReqDTO;
 import com.nageoffer.admin.dto.resp.UserRespDTO;
 import com.nageoffer.admin.service.UserService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -23,7 +22,7 @@ public class UserController {
      */
 
     private final UserService userService;
-    @GetMapping("/api/shortlink/v1/user/{username}")
+    @GetMapping("/api/short-link/v1/user/{username}")
     public Result<UserRespDTO> getUserByUserName(@PathVariable("username") String username){
 //        UserRespDTO result = userService.getUserByUsername(username);
 //        if(result == null){
@@ -31,7 +30,27 @@ public class UserController {
 //        }else {
 //            return new Result<UserRespDTO>().setCode("0").setData(result);
 //        }
-        System.out.println("test2");
         return Results.success(userService.getUserByUsername(username));//优化后的代码 为什么这么写
+    }
+
+    /**
+     * 查找用户名是否存在
+     * @param username
+     * @return
+     */
+    @GetMapping("/api/short-link/v1/user/has-username")
+    public Result<Boolean> hasUsername(@RequestParam("username")String username){
+        return Results.success(userService.hasUsername(username));
+    }
+
+    /**
+     * 注册用户
+     * @param requestParam
+     * @return
+     */
+    @PostMapping("/api/short-link/v1/user")
+    public Result<Void> register(@RequestBody UserRegisterReqDTO requestParam){
+        userService.register(requestParam);
+        return Results.success();
     }
 }

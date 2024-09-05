@@ -17,5 +17,6 @@ public class PhoneDesensitizationSerializer extends JsonSerializer<String> {
     public void serialize(String phone, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
         String phoneDesensitization = DesensitizedUtil.mobilePhone(phone);
         jsonGenerator.writeString(phoneDesensitization);
+
     }
 }
