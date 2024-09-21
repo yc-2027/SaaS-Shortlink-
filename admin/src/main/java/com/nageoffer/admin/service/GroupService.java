@@ -2,6 +2,7 @@ package com.nageoffer.admin.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.nageoffer.admin.dao.entity.GroupDO;
+import com.nageoffer.admin.dto.req.ShortLinkGroupUpdateReqDTO;
 import com.nageoffer.admin.dto.resp.ShortLinkGroupRespDTO;
 
 import java.util.List;
@@ -21,4 +22,10 @@ public interface GroupService extends IService<GroupDO> {
      * @return 查询用户短链接分组集合
      */
     List<ShortLinkGroupRespDTO> listGroup();
+
+    /**
+     * 修改短链接分组
+     * @param requestParam 修改短链接分组参数
+     */
+    void updateGroup(ShortLinkGroupUpdateReqDTO requestParam);
 }
