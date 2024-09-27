@@ -1,5 +1,6 @@
 package com.nageoffer.admin.dao.entity;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.nageoffer.admin.common.database.BaseDo;
 import lombok.AllArgsConstructor;
@@ -39,6 +40,7 @@ public class GroupDO extends BaseDo {
     /**
      * 分组排序
      */
+    @TableField("sort_order")
     private Integer sortOrder;
 
 
