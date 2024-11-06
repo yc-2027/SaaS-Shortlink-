@@ -25,8 +25,6 @@ import org.redisson.api.RedissonClient;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
-import java.util.concurrent.TimeUnit;
-
 import static com.nageoffer.admin.common.constant.RedisCacheConstant.LOCK_USER_REGISTER_KEY;
 import static com.nageoffer.admin.common.enums.UserErrorCodeEnum.USER_INSERT_ERROR;
 import static com.nageoffer.admin.common.enums.UserErrorCodeEnum.USER_NAME_EXIST;
@@ -110,7 +108,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
          */
         String uuid = UUID.randomUUID().toString();
         stringRedisTemplate.opsForHash().put("login_" + requestParam.getUsername(),uuid,JSON.toJSONString(userDO));
-        stringRedisTemplate.expire("login_" + requestParam.getUsername(),30L, TimeUnit.DAYS);
+        //stringRedisTemplate.expire("login_" + requestParam.getUsername(),30L, TimeUnit.DAYS); //移除过期设置，不必重启后重新登录token
         return new UserLoginRespDTO(uuid);
     }
 

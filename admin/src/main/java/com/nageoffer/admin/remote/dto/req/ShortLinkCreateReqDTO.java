@@ -1,4 +1,4 @@
-package com.nageoffer.project.dto.req;
+package com.nageoffer.admin.remote.dto.req;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
