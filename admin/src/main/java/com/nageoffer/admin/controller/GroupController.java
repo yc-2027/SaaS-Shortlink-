@@ -21,7 +21,7 @@ public class GroupController {
     private final GroupService groupService;
 
     /**
-     * 短链接分组
+     * 新增短链接分组
      * @param requestParam
      * @return
      */
@@ -62,7 +62,7 @@ public class GroupController {
     }
 
     /**
-     * 删除短链接分组
+     * 排序短链接分组
      * @return
      */
     @PostMapping("/api/short-link/admin/v1/group/sort")

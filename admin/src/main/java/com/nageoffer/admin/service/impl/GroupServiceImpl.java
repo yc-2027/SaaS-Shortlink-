@@ -25,6 +25,7 @@ import java.util.List;
 @Slf4j
 @Service
 public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implements GroupService {
+
     @Override
     public void saveGroup(String groupName) {
         String gid;
@@ -46,10 +47,13 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implemen
     @Override
     public List<ShortLinkGroupRespDTO> listGroup() {
         // TODO 从当前上下文获取用户名
+        String username = UserContext.getUsername();
+        if (username == null) {
+            throw new IllegalArgumentException("用户名不能为空");
+        }
         LambdaQueryWrapper<GroupDO> queryWrapper = Wrappers.lambdaQuery(GroupDO.class)
-                //.isNull(UserContext.getUsername())
                 .eq(GroupDO::getDelFlag,0)
-                .eq(GroupDO::getUsername,UserContext.getUsername())
+                .eq(GroupDO::getUsername,username)
                 .orderByDesc(GroupDO::getSortOrder,GroupDO::getUpdateTime);
         List<GroupDO> groupDOList = baseMapper.selectList(queryWrapper);
         return BeanUtil.copyToList(groupDOList, ShortLinkGroupRespDTO.class);
