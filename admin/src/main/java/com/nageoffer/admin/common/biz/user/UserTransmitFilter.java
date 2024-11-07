@@ -15,7 +15,6 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.List;
-import java.util.Objects;
 
 import static com.nageoffer.admin.common.enums.UserErrorCodeEnum.USER_TOKEN_FAIL;
 
@@ -41,30 +40,28 @@ public class UserTransmitFilter implements Filter {
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException,ServletException {
         HttpServletRequest httpServletRequest = (HttpServletRequest) servletRequest;
         String requestURI = httpServletRequest.getRequestURI();
-        if(!IGNORE_URI.contains(requestURI)){
-            String method = httpServletRequest.getMethod();
-            if(!(Objects.equals(requestURI,"/api/short-link/admin/v1/user")) && Objects.equals(method,"POST")){
-                String username = httpServletRequest.getHeader("username");
-                String token = httpServletRequest.getHeader("token");
-                if(StrUtil.isAllNotBlank(username,token)){//不能用empty() empty概括不了全部
-                    returnJson((HttpServletResponse) servletResponse,JSON.toJSONString(Results.failure(new ClientException(USER_TOKEN_FAIL))));
-                    //JSON.toJSONString(Results.failure(new ClientException(USER_TOKEN_FAIL)));
-                    //throw new ClientException(USER_TOKEN_FAIL);
-                    return;
-                }
-                Object userInfoJsonStr;
-                try {
-                    userInfoJsonStr = stringRedisTemplate.opsForHash().get("login_" + username,token);
-                    if(userInfoJsonStr == null){
-                        throw new ClientException(USER_TOKEN_FAIL);
-                    }
-                }catch (Exception ex){
-                    returnJson((HttpServletResponse) servletResponse,JSON.toJSONString(Results.failure(new ClientException(USER_TOKEN_FAIL))));
-                    return;
-                }
-                UserInfoDTO userInfoDTO = JSON.parseObject(userInfoJsonStr.toString(), UserInfoDTO.class);
-                UserContext.setUser(userInfoDTO);
+        if (!IGNORE_URI.contains(requestURI)) {
+            String username = httpServletRequest.getHeader("username" );
+            String token = httpServletRequest.getHeader("token" );
+            if (StrUtil.isAllBlank(username, token)) {//不能用empty() empty概括不了全部
+                returnJson((HttpServletResponse) servletResponse, JSON.toJSONString(Results.failure(new ClientException(USER_TOKEN_FAIL))));
+                //JSON.toJSONString(Results.failure(new ClientException(USER_TOKEN_FAIL)));
+                //throw new ClientException(USER_TOKEN_FAIL);
+                return;
             }
+            Object userInfoJsonStr;
+            try {
+                userInfoJsonStr = stringRedisTemplate.opsForHash().get("login_" + username, token);
+                if (userInfoJsonStr == null) {
+                    throw new ClientException(USER_TOKEN_FAIL);
+                }
+            } catch (Exception ex) {
+                returnJson((HttpServletResponse) servletResponse, JSON.toJSONString(Results.failure(new ClientException(USER_TOKEN_FAIL))));
+                return;
+            }
+            UserInfoDTO userInfoDTO = JSON.parseObject(userInfoJsonStr.toString(), UserInfoDTO.class);
+            UserContext.setUser(userInfoDTO);
+
         }
         try {
             filterChain.doFilter(servletRequest, servletResponse);
