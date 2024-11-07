@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.nageoffer.admin.common.convention.result.Result;
 import com.nageoffer.admin.remote.dto.req.ShortLinkCreateReqDTO;
 import com.nageoffer.admin.remote.dto.req.ShortLinkPageReqDTO;
+import com.nageoffer.admin.remote.dto.req.ShortLinkUpdateReqDTO;
 import com.nageoffer.admin.remote.dto.resp.ShortLinkCreateRespDTO;
 import com.nageoffer.admin.remote.dto.resp.ShortLinkGroupCountQueryRespDTO;
 import com.nageoffer.admin.remote.dto.resp.ShortLinkPageRespDTO;
@@ -29,6 +30,14 @@ public interface ShortLinkRemoteService {
         String resultBodyStr = HttpUtil.post("http://127.0.0.1:8001/api/short-link/v1/create", JSON.toJSONString(requestParam));
         return JSON.parseObject(resultBodyStr, new TypeReference<>() {
         });
+    }
+    /**
+     * 修改短链接
+     * @param requestParam 修改短链接请求参数
+     *
+     */
+    default void updateShortLink(ShortLinkUpdateReqDTO requestParam){
+        HttpUtil.post("http://127.0.0.1:8001/api/short-link/v1/update", JSON.toJSONString(requestParam));
     }
 
     /**
