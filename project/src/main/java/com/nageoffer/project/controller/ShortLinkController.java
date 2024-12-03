@@ -28,7 +28,6 @@ public class ShortLinkController {
 
     @GetMapping("/{short-uri}")
     public void restoreUrl(@PathVariable("short-uri")String shortUri, ServletRequest request, ServletResponse response) throws IOException {
-        //request.get
         shortLinkService.restoreUrl(shortUri,request,response);
     }
 
