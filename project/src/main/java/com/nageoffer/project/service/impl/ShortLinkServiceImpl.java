@@ -116,13 +116,13 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
         long timeout = LinkUtil.getLinkCacheValidDate(requestParam.getValidDate());
         System.out.println("设置的 timeout 值为（毫秒）: " + timeout);
         stringRedisTemplate.opsForValue().set(
-                String.format(GOTO_SHORT_LINK_KEY, fullShortUrl),
+                String.format(GOTO_SHORT_LINK_KEY, fullShortUrl),//http开头
                 requestParam.getOriginUrl(),
                 LinkUtil.getLinkCacheValidDate(requestParam.getValidDate()), TimeUnit.MILLISECONDS
         );
         shortUriCreateCachePenetrationBloomFilter.add(fullShortUrl);
         return ShortLinkCreateRespDTO.builder()
-                .fullShortUrl("http://" + shortLinkDO.getFullShortUrl())
+                .fullShortUrl(shortLinkDO.getFullShortUrl())
                 .originUrl(requestParam.getOriginUrl())
                 .gid(requestParam.getGid())
                 .build();
@@ -205,7 +205,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
     @Override
     public void restoreUrl(String shortUri, ServletRequest request, ServletResponse response) {
         String serverName = request.getServerName();
-        String fullShortUrl = serverName + "/" + shortUri;
+        String fullShortUrl = "http://" + serverName + "/" + shortUri;
         String originalLink = stringRedisTemplate.opsForValue().get(String.format(GOTO_SHORT_LINK_KEY, fullShortUrl));
         if (StrUtil.isNotBlank(originalLink)) {
             System.out.println("orignalUrl1: " + originalLink);//这里不是不存在，而是已经知道缓存里存在了所以直接返回
@@ -248,21 +248,18 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                     .eq(ShortLinkDO::getDelFlag, 0)
                     .eq(ShortLinkDO::getEnableStatus, 0);
             ShortLinkDO shortLinkDO = baseMapper.selectOne(queryWrapper);
-            if (shortLinkDO != null) {
-                if(shortLinkDO.getValidDate() != null && shortLinkDO.getValidDate().before(new Date())){
-                    System.out.println("短链接过期，过期时间 : " + shortLinkDO.getValidDate());
-                    stringRedisTemplate.opsForValue().set(String.format(GOTO_IS_NULL_SHORT_LINK_KEY,fullShortUrl),"-",30,TimeUnit.MINUTES);
-                    ((HttpServletResponse) response).sendRedirect("/page/notfound");
-                    return;
-                }
-                stringRedisTemplate.opsForValue().set(
-                        fullShortUrl,
-                        shortLinkDO.getOriginUrl(),
-                        LinkUtil.getLinkCacheValidDate(shortLinkDO.getValidDate()), TimeUnit.MILLISECONDS
-                );
-                System.out.println("orignalUrl2: " + shortLinkDO.getOriginUrl());
-                ((HttpServletResponse) response).sendRedirect(shortLinkDO.getOriginUrl());
+            if (shortLinkDO == null || (shortLinkDO.getValidDate() != null && shortLinkDO.getValidDate().before(new Date()))) {//没搜到或者过期了
+                stringRedisTemplate.opsForValue().set(String.format(GOTO_IS_NULL_SHORT_LINK_KEY, fullShortUrl), "-", 30, TimeUnit.MINUTES);
+                ((HttpServletResponse) response).sendRedirect("/page/notfound");
+                return;
             }
+            stringRedisTemplate.opsForValue().set(
+                    fullShortUrl,
+                    shortLinkDO.getOriginUrl(),
+                    LinkUtil.getLinkCacheValidDate(shortLinkDO.getValidDate()), TimeUnit.MILLISECONDS
+            );
+            System.out.println("orignalUrl2: " + shortLinkDO.getOriginUrl());
+            ((HttpServletResponse) response).sendRedirect(shortLinkDO.getOriginUrl());
         } finally {
             lock.unlock();
         }
@@ -289,16 +286,16 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
     }
 
     @SneakyThrows
-    private  String getFavicon(String url){
+    private String getFavicon(String url) {
         URL targetUrl = new URL(url);
         HttpURLConnection connection = (HttpURLConnection) targetUrl.openConnection();
         connection.setRequestMethod("GET");
         connection.connect();
         int responseCode = connection.getResponseCode();
-        if(responseCode == HttpURLConnection.HTTP_OK){
+        if (responseCode == HttpURLConnection.HTTP_OK) {
             Document document = Jsoup.connect(url).get();
             Element faviconLink = document.select("link[rel~=(?i)^(shortcut icon|icon)]").first();
-            if(faviconLink != null){
+            if (faviconLink != null) {
                 return faviconLink.attr("abs:href");
             }
         }
