@@ -19,14 +19,8 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.nageoffer.project.common.convention.exception.ClientException;
 import com.nageoffer.project.common.convention.exception.ServiceException;
 import com.nageoffer.project.common.enums.ValidDateTypeEnum;
-import com.nageoffer.project.dao.entity.LinkAccessStatsDO;
-import com.nageoffer.project.dao.entity.LinkLocaleStatsDO;
-import com.nageoffer.project.dao.entity.ShortLinkDO;
-import com.nageoffer.project.dao.entity.ShortLinkGotoDO;
-import com.nageoffer.project.dao.mapper.LinkAccessStatsMapper;
-import com.nageoffer.project.dao.mapper.LinkLocaleStatsMapper;
-import com.nageoffer.project.dao.mapper.ShortLinkGotoMapper;
-import com.nageoffer.project.dao.mapper.ShortLinkMapper;
+import com.nageoffer.project.dao.entity.*;
+import com.nageoffer.project.dao.mapper.*;
 import com.nageoffer.project.dto.req.ShortLinkCreateReqDTO;
 import com.nageoffer.project.dto.req.ShortLinkPageReqDTO;
 import com.nageoffer.project.dto.req.ShortLinkUpdateReqDTO;
@@ -79,6 +73,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
     private final RedissonClient redissonClient;
     private final LinkAccessStatsMapper linkAccessStatsMapper;
     private final LinkLocaleStatsMapper linkLocaleStatsMapper;
+    private final LinkOsStatsMapper linkOsStatsMapper;
 
 
 
@@ -373,6 +368,14 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                         .build();
                 linkLocaleStatsMapper.shortLinkLocaleStats(linkLocaleStatsDO);
             }
+            LinkOsStatsDO linkOsStatsDO = LinkOsStatsDO.builder()
+                    .os(LinkUtil.getOs((HttpServletRequest) request))
+                    .cnt(1)
+                    .gid(gid)
+                    .fullShortUrl(fullShortUrl)
+                    .date(new Date())
+                    .build();
+            linkOsStatsMapper.shortLinkOsState(linkOsStatsDO);
 
         }catch (Throwable ex){
             log.error("短链接访问量统计异常",ex);
