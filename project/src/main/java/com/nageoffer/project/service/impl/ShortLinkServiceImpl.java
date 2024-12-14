@@ -7,6 +7,9 @@ import cn.hutool.core.lang.UUID;
 import cn.hutool.core.text.StrBuilder;
 import cn.hutool.core.util.ArrayUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.http.HttpUtil;
+import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
@@ -17,9 +20,11 @@ import com.nageoffer.project.common.convention.exception.ClientException;
 import com.nageoffer.project.common.convention.exception.ServiceException;
 import com.nageoffer.project.common.enums.ValidDateTypeEnum;
 import com.nageoffer.project.dao.entity.LinkAccessStatsDO;
+import com.nageoffer.project.dao.entity.LinkLocaleStatsDO;
 import com.nageoffer.project.dao.entity.ShortLinkDO;
 import com.nageoffer.project.dao.entity.ShortLinkGotoDO;
 import com.nageoffer.project.dao.mapper.LinkAccessStatsMapper;
+import com.nageoffer.project.dao.mapper.LinkLocaleStatsMapper;
 import com.nageoffer.project.dao.mapper.ShortLinkGotoMapper;
 import com.nageoffer.project.dao.mapper.ShortLinkMapper;
 import com.nageoffer.project.dto.req.ShortLinkCreateReqDTO;
@@ -58,6 +63,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.nageoffer.project.common.constant.RedisKeyConstant.*;
+import static com.nageoffer.project.common.constant.ShortLinkConstant.IP_API_REMOTE_URL;
 
 /**
  * 短链接接口实现层
@@ -72,6 +78,9 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
     private final StringRedisTemplate stringRedisTemplate;
     private final RedissonClient redissonClient;
     private final LinkAccessStatsMapper linkAccessStatsMapper;
+    private final LinkLocaleStatsMapper linkLocaleStatsMapper;
+
+
 
     @Override
     public ShortLinkCreateRespDTO createShortLink(ShortLinkCreateReqDTO requestParam) {
@@ -332,6 +341,38 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                     .date(new Date())
                     .build();
             linkAccessStatsMapper.shortLinkStats(linkAccessStatsDO);
+            String localeResultStr = HttpUtil.get(IP_API_REMOTE_URL + remoteAddr);
+            JSONObject localeResultObj = JSON.parseObject(localeResultStr);//这里要用alibaba fastjson
+            String status = localeResultObj.getString("status");
+            LinkLocaleStatsDO linkLocaleStatsDO;
+            if(StrUtil.isNotBlank(status) && StrUtil.equals(status,"success")){
+                linkLocaleStatsDO = LinkLocaleStatsDO.builder()
+                        .region_name(localeResultObj.getString("region_name"))
+                        .city(localeResultObj.getString("city"))
+                        .zip(localeResultObj.getString("zip"))
+                        .country(localeResultObj.getString("country"))
+                        .query(localeResultObj.getString("query"))
+                        .gid(gid)
+                        .cnt(1)
+                        .fullShortUrl(fullShortUrl)
+                        .date(new Date())
+                        .build();
+                linkLocaleStatsMapper.shortLinkLocaleStats(linkLocaleStatsDO);
+            }else if(StrUtil.equals(status,"fail")){
+                linkLocaleStatsDO = LinkLocaleStatsDO.builder()
+                        .region_name("unknown")
+                        .city("unknown")
+                        .zip("unknown")
+                        .country("unknown")
+                        .query(localeResultObj.getString("query"))
+                        .gid(gid)
+                        .cnt(1)
+                        .fullShortUrl(fullShortUrl)
+                        .date(new Date())
+                        .build();
+                linkLocaleStatsMapper.shortLinkLocaleStats(linkLocaleStatsDO);
+            }
+
         }catch (Throwable ex){
             log.error("短链接访问量统计异常",ex);
         }
