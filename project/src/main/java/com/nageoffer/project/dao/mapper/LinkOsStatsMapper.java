@@ -10,7 +10,7 @@ import org.apache.ibatis.annotations.Param;
  */
 public interface LinkOsStatsMapper extends BaseMapper<LinkOsStatsMapper> {
     /**
-     * 记录地区访问监控数据
+     * 记录浏览器访问监控数据
      */
     @Insert("INSERT INTO " +
             "t_link_os_stats (full_short_url, date, gid, cnt, os, create_time, update_time, del_flag) " +
