@@ -317,7 +317,8 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                 addResponseCookieTask.run();
             }
 
-            String remoteAddr = LinkUtil.getRealIp((HttpServletRequest) request);
+            //String remoteAddr = LinkUtil.getRealIp((HttpServletRequest) request);
+            String remoteAddr = "133.11.54.149";
             Long UipAdded = stringRedisTemplate.opsForSet().add("short-link:stats:uv:" + fullShortUrl,remoteAddr);
             boolean uipFirstFlag = UipAdded != null && UipAdded > 0L;
 
@@ -347,7 +348,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
             LinkLocaleStatsDO linkLocaleStatsDO;
             if(StrUtil.isNotBlank(status) && StrUtil.equals(status,"success")){
                 linkLocaleStatsDO = LinkLocaleStatsDO.builder()
-                        .region_name(localeResultObj.getString("region_name"))
+                        .regionName(localeResultObj.getString("regionName"))
                         .city(localeResultObj.getString("city"))
                         .zip(localeResultObj.getString("zip"))
                         .country(localeResultObj.getString("country"))
@@ -360,7 +361,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                 linkLocaleStatsMapper.shortLinkLocaleStats(linkLocaleStatsDO);
             }else if(StrUtil.equals(status,"fail")){
                 linkLocaleStatsDO = LinkLocaleStatsDO.builder()
-                        .region_name("unknown")
+                        .regionName("unknown")
                         .city("unknown")
                         .zip("unknown")
                         .country("unknown")

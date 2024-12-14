@@ -46,7 +46,7 @@ public class LinkLocaleStatsDO extends BaseDO {
     /**
      * 省份名称
      */
-    private String region_name;
+    private String regionName;
 
     /**
      * 市名称

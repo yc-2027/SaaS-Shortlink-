@@ -34,7 +34,7 @@ public interface LinkLocaleStatsMapper extends BaseMapper<LinkLocaleStatsDO> {
             #{linkLocaleStats.gid},
             #{linkLocaleStats.date},
             #{linkLocaleStats.cnt},
-            #{linkLocaleStats.region_name},
+            #{linkLocaleStats.regionName},
             #{linkLocaleStats.city},
             #{linkLocaleStats.zip},
             #{linkLocaleStats.country},
