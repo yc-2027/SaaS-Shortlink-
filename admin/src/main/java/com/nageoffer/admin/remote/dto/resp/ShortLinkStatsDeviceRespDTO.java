@@ -1,4 +1,4 @@
-package com.nageoffer.admin.dto.resp;
+package com.nageoffer.admin.remote.dto.resp;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -6,13 +6,13 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * 短链接操作系统监控响应参数
+ * 短链接访问设备监控响应参数
  */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ShortLinkStatsOsRespDTO {
+public class ShortLinkStatsDeviceRespDTO {
 
     /**
      * 统计
@@ -20,9 +20,9 @@ public class ShortLinkStatsOsRespDTO {
     private Integer cnt;
 
     /**
-     * 操作系统
+     * 设备类型
      */
-    private String os;
+    private String device;
 
     /**
      * 占比

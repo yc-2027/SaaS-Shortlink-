@@ -1,21 +1,22 @@
 package com.nageoffer.project.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
-import com.nageoffer.project.dao.entity.LinkAccessStatsDO;
-import com.nageoffer.project.dao.entity.LinkDeviceStatsDO;
-import com.nageoffer.project.dao.entity.LinkLocaleStatsDO;
-import com.nageoffer.project.dao.entity.LinkNetworkStatsDO;
+import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.date.DateField;
+import cn.hutool.core.date.DateUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.nageoffer.project.dao.entity.*;
 import com.nageoffer.project.dao.mapper.*;
-import com.nageoffer.project.dto.req.*;
+import com.nageoffer.project.dto.req.ShortLinkStatsAccessRecordReqDTO;
+import com.nageoffer.project.dto.req.ShortLinkStatsReqDTO;
 import com.nageoffer.project.dto.resp.*;
 import com.nageoffer.project.service.ShortLinkStatsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -37,6 +38,34 @@ public class ShortLinkStatsServiceImpl implements ShortLinkStatsService {
     public ShortLinkStatsRespDTO oneShortLinkStats(ShortLinkStatsReqDTO requestParam) {
         // 基础访问详情
         List<LinkAccessStatsDO> listStatsByShortLink = linkAccessStatsMapper.listStatsByShortLink(requestParam);
+        if (CollUtil.isEmpty(listStatsByShortLink)) {
+            return null;
+        }
+        // 基础访问详情
+        List<ShortLinkStatsAccessDailyRespDTO> daily = new ArrayList<>();
+        List<String> rangeDates = DateUtil.rangeToList(DateUtil.parse(requestParam.getStartDate()), DateUtil.parse(requestParam.getEndDate()), DateField.DAY_OF_MONTH).stream()
+                .map(DateUtil::formatDate)
+                .toList();
+        rangeDates.forEach(each -> listStatsByShortLink.stream()
+                .filter(item -> Objects.equals(each, DateUtil.formatDate(item.getDate())))
+                .findFirst()
+                .ifPresentOrElse(item -> {
+                    ShortLinkStatsAccessDailyRespDTO accessDailyRespDTO = ShortLinkStatsAccessDailyRespDTO.builder()
+                            .date(each)
+                            .pv(item.getPv())
+                            .uv(item.getUv())
+                            .uip(item.getUip())
+                            .build();
+                    daily.add(accessDailyRespDTO);
+                }, () -> {
+                    ShortLinkStatsAccessDailyRespDTO accessDailyRespDTO = ShortLinkStatsAccessDailyRespDTO.builder()
+                            .date(each)
+                            .pv(0)
+                            .uv(0)
+                            .uip(0)
+                            .build();
+                    daily.add(accessDailyRespDTO);
+                }));
         // 地区访问详情（仅国内）
         List<ShortLinkStatsLocaleCNRespDTO> localeCnStats = new ArrayList<>();
         List<LinkLocaleStatsDO> listedLocaleByShortLink = linkLocaleStatsMapper.listLocaleByShortLink(requestParam);
@@ -122,8 +151,18 @@ public class ShortLinkStatsServiceImpl implements ShortLinkStatsService {
         // 访客访问类型详情
         List<ShortLinkStatsUvRespDTO> uvTypeStats = new ArrayList<>();
         HashMap<String, Object> findUvTypeByShortLink = linkAccessLogsMapper.findUvTypeCntByShortLink(requestParam);
-        int oldUserCnt = Integer.parseInt(findUvTypeByShortLink.get("oldUserCnt").toString());
-        int newUserCnt = Integer.parseInt(findUvTypeByShortLink.get("newUserCnt").toString());
+        int oldUserCnt = Integer.parseInt(
+                Optional.ofNullable(findUvTypeByShortLink)
+                        .map(each -> each.get("oldUserCnt"))
+                        .map(Object::toString)
+                        .orElse("0")
+        );
+        int newUserCnt = Integer.parseInt(
+                Optional.ofNullable(findUvTypeByShortLink)
+                        .map(each -> each.get("newUserCnt"))
+                        .map(Object::toString)
+                        .orElse("0")
+        );
         int uvSum = oldUserCnt + newUserCnt;
         double oldRatio = (double) oldUserCnt / uvSum;
         double actualOldRatio = Math.round(oldRatio * 100.0) / 100.0;
@@ -174,7 +213,7 @@ public class ShortLinkStatsServiceImpl implements ShortLinkStatsService {
             networkStats.add(networkRespDTO);
         });
         return ShortLinkStatsRespDTO.builder()
-                .daily(BeanUtil.copyToList(listStatsByShortLink, ShortLinkStatsAccessDailyRespDTO.class))
+                .daily(daily)
                 .localeCnStats(localeCnStats)
                 .hourStats(hourStats)
                 .topIpStats(topIpStats)
@@ -186,4 +225,97 @@ public class ShortLinkStatsServiceImpl implements ShortLinkStatsService {
                 .networkStats(networkStats)
                 .build();
     }
+
+    @Override
+    public IPage<ShortLinkStatsAccessRecordRespDTO> shortLinkStatsAccessRecord(ShortLinkStatsAccessRecordReqDTO requestParam) {
+        LambdaQueryWrapper<LinkAccessLogsDO> queryWrapper = Wrappers.lambdaQuery(LinkAccessLogsDO.class)
+                .eq(LinkAccessLogsDO::getGid, requestParam.getGid())
+                .eq(LinkAccessLogsDO::getFullShortUrl, requestParam.getFullShortUrl())
+                .between(LinkAccessLogsDO::getCreateTime, requestParam.getStartDate(), requestParam.getEndDate())
+                .eq(LinkAccessLogsDO::getDelFlag, 0)
+                .orderByDesc(LinkAccessLogsDO::getCreateTime);
+        IPage<LinkAccessLogsDO> linkAccessLogsDOIPage = linkAccessLogsMapper.selectPage(requestParam, queryWrapper);
+        IPage<ShortLinkStatsAccessRecordRespDTO> actualResult = linkAccessLogsDOIPage.convert(each -> BeanUtil.toBean(each, ShortLinkStatsAccessRecordRespDTO.class));
+        List<String> userAccessLogsList = actualResult.getRecords().stream()
+                .map(ShortLinkStatsAccessRecordRespDTO::getUser)
+                .toList();
+        List<Map<String, Object>> uvTypeList = linkAccessLogsMapper.selectUvTypeByUsers(
+                requestParam.getGid(),
+                requestParam.getFullShortUrl(),
+                requestParam.getStartDate(),
+                requestParam.getEndDate(),
+                userAccessLogsList
+        );
+        actualResult.getRecords().forEach(each -> {
+            String uvType = uvTypeList.stream()
+                    .filter(item -> Objects.equals(each.getUser(), item.get("user")))
+                    .findFirst()
+                    .map(item -> item.get("UvType"))
+                    .map(Object::toString)
+                    .orElse("旧访客");
+            each.setUvType(uvType);
+        });
+        return actualResult;
+    }
+
+//    @Override
+//    public IPage<ShortLinkStatsAccessRecordRespDTO> shortLinkStatsAccessRecord(ShortLinkStatsAccessRecordReqDTO requestParam) {
+//        // 使用 LambdaQueryWrapper 来构建查询条件
+//        // LinkAccessLogsDO 是数据库中的实体类。queryWrapper 在这里指定了查询条件（比如 GID、FullShortUrl、时间范围、删除标记等）。
+//        LambdaQueryWrapper<LinkAccessLogsDO> queryWrapper = Wrappers.lambdaQuery(LinkAccessLogsDO.class)
+//                .eq(LinkAccessLogsDO::getGid, requestParam.getGid())                      // 条件：gid 等于请求参数中的 gid
+//                .eq(LinkAccessLogsDO::getFullShortUrl, requestParam.getFullShortUrl())    // 条件：fullShortUrl 等于请求参数中的 fullShortUrl
+//                .between(LinkAccessLogsDO::getCreateTime, requestParam.getStartDate(), requestParam.getEndDate()) // 条件：createTime 在请求参数给出的时间范围内
+//                .eq(LinkAccessLogsDO::getDelFlag, 0)                                      // 条件：delFlag 等于0（可能表示未删除数据）
+//                .orderByDesc(LinkAccessLogsDO::getCreateTime);                            // 按 createTime 倒序排序
+//
+//        // 使用 linkAccessLogsMapper 的 selectPage 方法进行分页查询
+//        // requestParam 通常会包含分页信息（比如当前页码、每页大小），queryWrapper 则是查询条件
+//        IPage<LinkAccessLogsDO> linkAccessLogsDOIPage = linkAccessLogsMapper.selectPage(requestParam, queryWrapper);
+//
+//        // 将查询结果（LinkAccessLogsDO 类型）转换为目标类型 ShortLinkStatsAccessRecordRespDTO
+//        // convert 方法接受一个 lambda，用于将每个 LinkAccessLogsDO 转换为 ShortLinkStatsAccessRecordRespDTO
+//        IPage<ShortLinkStatsAccessRecordRespDTO> actualResult = linkAccessLogsDOIPage.convert(
+//                each -> BeanUtil.toBean(each, ShortLinkStatsAccessRecordRespDTO.class)
+//        );
+//
+//        // 从结果中提取所有用户标识（User 字段），形成一个列表
+//        List<String> userAccessLogsList = actualResult.getRecords().stream()
+//                .map(ShortLinkStatsAccessRecordRespDTO::getUser)
+//                .toList();
+//
+//        // 根据上面获取的用户列表，再次通过 mapper 调用自定义的 SQL 查询方法 selectUvTypeByUsers
+//        // 这里传入参数（gid、fullShortUrl、时间范围、用户列表），返回一个 List<Map<String, Object>> 的数据结构
+//        // 用于获取这些用户对应的 "uvType" 信息。这可能是一次辅助查询，用于补充页面访问记录中的访客类型信息。
+//        List<Map<String, Object>> uvTypeList = linkAccessLogsMapper.selectUvTypeByUsers(
+//                requestParam.getGid(),
+//                requestParam.getFullShortUrl(),
+//                requestParam.getStartDate(),
+//                requestParam.getEndDate(),
+//                userAccessLogsList
+//        );
+//
+//        // 对查询结果中的每一条记录进行处理
+//        // 使用 forEach 遍历 IPage<ShortLinkStatsAccessRecordRespDTO> 中的每个记录对象 each
+//        actualResult.getRecords().forEach(each -> {
+//            // 从 uvTypeList 中找到与当前记录的 user 匹配的数据行（过滤条件为 item.get("user") == each.getUser()）
+//            // findFirst() 找到第一个匹配项
+//            // 如果存在，则从匹配项中获取 "UvType" 字段，并转换为字符串
+//            // 否则，默认使用 "旧访客"
+//            String uvType = uvTypeList.stream()
+//                    .filter(item -> Objects.equals(each.getUser(), item.get("user")))
+//                    .findFirst()
+//                    .map(item -> item.get("uvType"))
+//                    .map(Object::toString)
+//                    .orElse("旧访客");
+//
+//            // 将获取到的 uvType 设置回 each 的 uvType 属性中
+//            each.setUvType(uvType);
+//        });
+//
+//        // 返回最终结果。此时 actualResult 是一个带有所有分页信息的 IPage 对象，其 records 中的对象类型为 ShortLinkStatsAccessRecordRespDTO，
+//        // 并且 uvType 字段已被补全。
+//        return actualResult;
+//    }
+
 }
