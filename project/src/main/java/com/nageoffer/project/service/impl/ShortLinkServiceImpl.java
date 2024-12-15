@@ -290,7 +290,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
             AtomicReference<String> uv = new AtomicReference<>();
             Runnable addResponseCookieTask = () -> {
                 uv.set(UUID.fastUUID().toString());
-                Cookie uvCookie = new Cookie("uv", uv.get());
+                Cookie uvCookie = new Cookie("uv", uv.get());//把cookie的value作为user的标识
                 uvCookie.setMaxAge(60 * 60 * 24 * 30);
                 URL url;
                 try {
@@ -312,6 +312,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                         .ifPresentOrElse(each -> {
                             uv.set(each);
                             Long uvAdded = stringRedisTemplate.opsForSet().add("short-link:stats:uv:" + fullShortUrl, each);
+                            //each的值从未添加过 返回1L each的值已经在存在 返回OL key的值是新的返回1L
                             uvFirstFlag.set(uvAdded != null && uvAdded > 0L);//添加成功返回1L 添加失败返回0L
                         }, addResponseCookieTask);
             } else {

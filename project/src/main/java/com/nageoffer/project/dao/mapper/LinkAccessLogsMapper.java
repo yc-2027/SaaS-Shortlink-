@@ -16,6 +16,8 @@ public interface LinkAccessLogsMapper extends BaseMapper<LinkAccessLogsDO> {
     /**
      * 根据短链接获取指定日期内高频访问IP数据
      */
+    //注意下面之所以这样写是因为create time会把日期转换为当天0点
+    //注意日期后面拼接时间一定要有空格 ！
     @Select("SELECT " +
             "    ip, " +
             "    COUNT(ip) AS count " +
@@ -24,7 +26,7 @@ public interface LinkAccessLogsMapper extends BaseMapper<LinkAccessLogsDO> {
             "WHERE " +
             "    full_short_url = #{param.fullShortUrl} " +
             "    AND gid = #{param.gid} " +
-            "    AND create_time BETWEEN #{param.startDate} and #{param.endDate} " +
+            "    AND create_time BETWEEN CONCAT(#{param.startDate},' 00:00:00') and  CONCAT(#{param.endDate},' 23:59:59') " +
             "GROUP BY " +
             "    full_short_url, gid, ip " +
             "ORDER BY " +
