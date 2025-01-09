@@ -54,4 +54,5 @@ public interface ShortLinkService extends IService<ShortLinkDO> {
      * @param response HTTP响应
      */
     void restoreUrl(String shortUri, ServletRequest request, ServletResponse response) throws IOException;
+
 }
