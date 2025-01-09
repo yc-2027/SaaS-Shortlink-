@@ -1,8 +1,8 @@
 package com.nageoffer.project.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.nageoffer.admin.common.convention.result.Result;
-import com.nageoffer.admin.common.convention.result.Results;
+import com.nageoffer.project.common.convention.result.Result;
+import com.nageoffer.project.common.convention.result.Results;
 import com.nageoffer.project.dto.req.RecycleBinRecoverReqDTO;
 import com.nageoffer.project.dto.req.RecycleBinRemoveReqDTO;
 import com.nageoffer.project.dto.req.RecycleBinSaveReqDTO;
