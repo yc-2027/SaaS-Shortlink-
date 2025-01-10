@@ -21,12 +21,11 @@ import com.nageoffer.project.common.convention.exception.ServiceException;
 import com.nageoffer.project.common.enums.ValidDateTypeEnum;
 import com.nageoffer.project.dao.entity.*;
 import com.nageoffer.project.dao.mapper.*;
+import com.nageoffer.project.dto.req.ShortLinkBatchCreateReqDTO;
 import com.nageoffer.project.dto.req.ShortLinkCreateReqDTO;
 import com.nageoffer.project.dto.req.ShortLinkPageReqDTO;
 import com.nageoffer.project.dto.req.ShortLinkUpdateReqDTO;
-import com.nageoffer.project.dto.resp.ShortLinkCreateRespDTO;
-import com.nageoffer.project.dto.resp.ShortLinkGroupCountQueryRespDTO;
-import com.nageoffer.project.dto.resp.ShortLinkPageRespDTO;
+import com.nageoffer.project.dto.resp.*;
 import com.nageoffer.project.service.ShortLinkService;
 import com.nageoffer.project.tookit.HashUtil;
 import com.nageoffer.project.tookit.LinkUtil;
@@ -44,6 +43,7 @@ import org.jsoup.nodes.Element;
 import org.redisson.api.RBloomFilter;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -81,17 +81,22 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
     private final LinkNetworkStatsMapper linkNetworkStatsMapper;
     private final LinkStatsTodayMapper linkStatsTodayMapper;
 
+    @Value("${short-link.domain.default}")
+    private String createShortLinkDefaultDomain;
+
 
     @Override
     public ShortLinkCreateRespDTO createShortLink(ShortLinkCreateReqDTO requestParam) {
         String shortLinkSuffix = generatorSuffix(requestParam);//后缀
-        String fullShortUrl = StrBuilder.create(requestParam.getDomain())
+        //String fullShortUrl = StrBuilder.create(requestParam.getDomain())
+        String fullShortUrl = StrBuilder.create(createShortLinkDefaultDomain)
                 .append("/")
                 .append(shortLinkSuffix)
                 .toString();
         //String fullShortUrl = requestParam.getDomain() + "/" + shortLinkSuffix;
         ShortLinkDO shortLinkDO = ShortLinkDO.builder()
-                .domain(requestParam.getDomain())
+                .domain(createShortLinkDefaultDomain)
+                //.domain(requestParam.getDomain())
                 .originUrl(requestParam.getOriginUrl())
                 .gid(requestParam.getGid())
                 .createdType(requestParam.getCreatedType())
@@ -134,7 +139,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
         }
         //缓存预热
         long timeout = LinkUtil.getLinkCacheValidDate(requestParam.getValidDate());
-        System.out.println("设置的 timeout 值为（毫秒）: " + timeout);
+        System.out.println("设置的 timeout 值为（秒）: " + timeout * 0.001);
         stringRedisTemplate.opsForValue().set(
                 String.format(GOTO_SHORT_LINK_KEY, fullShortUrl),//http开头
                 requestParam.getOriginUrl(),
@@ -147,6 +152,33 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                 .gid(requestParam.getGid())
                 .build();
     }
+    @Override
+    public ShortLinkBatchCreateRespDTO batchCreateShortLink(ShortLinkBatchCreateReqDTO requestParam) {
+        List<String> originUrls = requestParam.getOriginUrls();
+        List<String> describes = requestParam.getDescribes();
+        List<ShortLinkBaseInfoRespDTO> result = new ArrayList<>();
+        for (int i = 0; i < originUrls.size(); i++) {
+            ShortLinkCreateReqDTO shortLinkCreateReqDTO = BeanUtil.toBean(requestParam, ShortLinkCreateReqDTO.class);
+            shortLinkCreateReqDTO.setOriginUrl(originUrls.get(i));
+            shortLinkCreateReqDTO.setDescribe(describes.get(i));
+            try {
+                ShortLinkCreateRespDTO shortLink = createShortLink(shortLinkCreateReqDTO);
+                ShortLinkBaseInfoRespDTO linkBaseInfoRespDTO = ShortLinkBaseInfoRespDTO.builder()
+                        .fullShortUrl(shortLink.getFullShortUrl())
+                        .originUrl(shortLink.getOriginUrl())
+                        .describe(describes.get(i))
+                        .build();
+                result.add(linkBaseInfoRespDTO);
+            } catch (Throwable ex) {
+                log.error("批量创建短链接失败，原始参数：{}", originUrls.get(i));
+            }
+        }
+        return ShortLinkBatchCreateRespDTO.builder()
+                .total(result.size())
+                .baseLinkInfos(result)
+                .build();
+    }
+
 
     @Transactional(rollbackFor = Exception.class)
     @Override
@@ -227,7 +259,12 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
     @Override
     public void restoreUrl(String shortUri, ServletRequest request, ServletResponse response) {
         String serverName = request.getServerName();
-        String fullShortUrl = "http://" + serverName + "/" + shortUri;
+        String serverPort = Optional.of(request.getServerPort())
+                .filter(each -> !Objects.equals(each,80))
+                .map(String::valueOf)
+                .map(each -> ":" + each)
+                .orElse("");
+        String fullShortUrl = "http://" + serverName + serverPort + "/" + shortUri;
         String originalLink = stringRedisTemplate.opsForValue().get(String.format(GOTO_SHORT_LINK_KEY, fullShortUrl));
         if (StrUtil.isNotBlank(originalLink)) {
             System.out.println("orignalUrl1: " + originalLink);//这里不是不存在，而是已经知道缓存里存在了所以直接返回
@@ -461,7 +498,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
             String originUrl = requestParam.getOriginUrl();
             originUrl += System.currentTimeMillis();
             shortUri = HashUtil.hashToBase62(originUrl);
-            if (!shortUriCreateCachePenetrationBloomFilter.contains(requestParam.getDomain() + "/" + shortUri)) {
+            if (!shortUriCreateCachePenetrationBloomFilter.contains(requestParam.getDomain() + ":8001/" + shortUri)) {
                 break;
             }
             customGenerateCount++;
