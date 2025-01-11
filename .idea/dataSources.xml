@@ -15,6 +15,9 @@
         <property name="com.intellij.clouds.kubernetes.db.container.port" />
       </jdbc-additional-properties>
       <working-dir>$ProjectFileDir$</working-dir>
+      <driver-properties>
+        <property name="socketTimeout" value="10000" />
+      </driver-properties>
     </data-source>
     <data-source source="LOCAL" name="link@127.0.0.1" uuid="76ef17fa-c00e-49c3-b84b-2dafbdeae2fa">
       <driver-ref>mysql.8</driver-ref>
