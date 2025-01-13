@@ -14,7 +14,7 @@ import java.util.List;
 /**
  * 浏览器访问持久层
  */
-public interface LinkBrowserStatsMapper extends BaseMapper<LinkBrowserStatsMapper> {
+public interface LinkBrowserStatsMapper extends BaseMapper<LinkBrowserStatsDO> {
     /**
      * 记录地区访问监控数据
      */

@@ -14,7 +14,7 @@ import java.util.List;
 /**
  * 操作系统访问持久层
  */
-public interface LinkOsStatsMapper extends BaseMapper<LinkOsStatsMapper> {
+public interface LinkOsStatsMapper extends BaseMapper<LinkOsStatsDO> {
     /**
      * 记录浏览器访问监控数据
      */

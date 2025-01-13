@@ -25,7 +25,7 @@ public class RecycleBinController {
     private final RecycleBinService recycleBinService;
 
     /**
-     * 保存回收站
+     * 把短链接保存金回收站
      * @param requestParam
      * @return
      */
