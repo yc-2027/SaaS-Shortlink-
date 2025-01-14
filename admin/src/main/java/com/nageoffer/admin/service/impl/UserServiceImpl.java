@@ -1,6 +1,7 @@
 package com.nageoffer.admin.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.lang.UUID;
 import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -26,6 +27,8 @@ import org.redisson.api.RedissonClient;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
+
+import java.util.Map;
 
 import static com.nageoffer.admin.common.constant.RedisCacheConstant.LOCK_USER_REGISTER_KEY;
 import static com.nageoffer.admin.common.enums.UserErrorCodeEnum.*;
@@ -63,7 +66,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
     @Override
     public void register(UserRegisterReqDTO requestParam) {
         if(hasUsername(requestParam.getUsername())){//这里为什么能这么写？
-            throw new ClientException(USER_NAME_EXIST);//理解一下
+            throw new ClientException(USER_NAME_EXIST);
         }
         RLock lock = redissonClient.getLock(LOCK_USER_REGISTER_KEY + requestParam.getUsername());
         try{
@@ -97,14 +100,19 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
         LambdaQueryWrapper<UserDO> queryWrapper = Wrappers.lambdaQuery(UserDO.class)
                 .eq(UserDO::getUsername,requestParam.getUsername())
                 .eq(UserDO::getPassword,requestParam.getPassword())
-                .eq(UserDO::getDelFlag,0);//未被注销
+                .eq(UserDO::getDelFlag,0);
         UserDO userDO = baseMapper.selectOne(queryWrapper);
         if(userDO == null){
             throw new ClientException("用户不存在");
         }
-        Boolean hasLogin = stringRedisTemplate.hasKey("login_" + requestParam.getUsername());
-        if(hasLogin != null && hasLogin){
-            throw new ClientException("用户已登录");
+        //改为了登录就返回token（方便配合公网短链接试用，让大家都能用同一个账号密码登录）
+        Map<Object ,Object> hasLoginMap = stringRedisTemplate.opsForHash().entries("login_" + requestParam.getUsername());
+        if (CollUtil.isNotEmpty(hasLoginMap)) {
+            String token = hasLoginMap.keySet().stream()
+                    .findFirst()
+                    .map(Object::toString)
+                    .orElseThrow(() -> new ClientException("用户登录错误"));
+            return new UserLoginRespDTO(token);
         }
         /**
          * Hash
