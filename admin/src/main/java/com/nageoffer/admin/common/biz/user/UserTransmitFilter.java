@@ -37,12 +37,12 @@ public class UserTransmitFilter implements Filter {
 
     @SneakyThrows //忽略异常注解
     @Override
-    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException,ServletException {
+    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
         HttpServletRequest httpServletRequest = (HttpServletRequest) servletRequest;
         String requestURI = httpServletRequest.getRequestURI();
         if (!IGNORE_URI.contains(requestURI)) {
-            String username = httpServletRequest.getHeader("username" );
-            String token = httpServletRequest.getHeader("token" );
+            String username = httpServletRequest.getHeader("username");
+            String token = httpServletRequest.getHeader("token");
             if (StrUtil.isAllBlank(username, token)) {//不能用empty() empty概括不了全部
                 returnJson((HttpServletResponse) servletResponse, JSON.toJSONString(Results.failure(new ClientException(USER_TOKEN_FAIL))));
                 //JSON.toJSONString(Results.failure(new ClientException(USER_TOKEN_FAIL)));
@@ -61,7 +61,6 @@ public class UserTransmitFilter implements Filter {
             }
             UserInfoDTO userInfoDTO = JSON.parseObject(userInfoJsonStr.toString(), UserInfoDTO.class);
             UserContext.setUser(userInfoDTO);
-
         }
         try {
             filterChain.doFilter(servletRequest, servletResponse);
@@ -70,16 +69,16 @@ public class UserTransmitFilter implements Filter {
         }
     }
 
-    private void returnJson(HttpServletResponse response,String json) throws Exception{
+    private void returnJson(HttpServletResponse response, String json) throws Exception {
         PrintWriter writer = null;
         response.setCharacterEncoding("UTF-8");
         response.setContentType("text/html; charset=utf-8");
-        try{
+        try {
             writer = response.getWriter();
             writer.print(json);
-        }catch (IOException e){
-        }finally {
-            if(writer != null)
+        } catch (IOException e) {
+        } finally {
+            if (writer != null)
                 writer.close();
         }
 

@@ -16,6 +16,10 @@ spring:
 short-link:
   group:
     max-num: 20
+  flow-limit:
+    enable: true
+    time-window: 1
+    max-access-count: 3
 redisson:
   # 单机模式配置
   singleServerConfig:
