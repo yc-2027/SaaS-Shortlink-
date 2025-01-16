@@ -10,7 +10,6 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.nageoffer.admin.common.convention.exception.ClientException;
 import com.nageoffer.admin.common.convention.exception.ServiceException;
-import com.nageoffer.admin.common.enums.UserErrorCodeEnum;
 import com.nageoffer.admin.dao.entity.UserDO;
 import com.nageoffer.admin.dao.mapper.UserMapper;
 import com.nageoffer.admin.dto.req.UserLoginReqDTO;
@@ -24,13 +23,16 @@ import lombok.RequiredArgsConstructor;
 import org.redisson.api.RBloomFilter;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
+import org.springframework.beans.BeanUtils;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static com.nageoffer.admin.common.constant.RedisCacheConstant.LOCK_USER_REGISTER_KEY;
+import static com.nageoffer.admin.common.constant.RedisCacheConstant.USER_LOGIN_KEY;
 import static com.nageoffer.admin.common.enums.UserErrorCodeEnum.*;
 
 /**
@@ -52,9 +54,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
         UserRespDTO result = new UserRespDTO();
         if(userDO == null)
         {
-            throw new ServiceException(UserErrorCodeEnum.USER_NULL);
+            throw new ServiceException(USER_NULL);
         }
-        org.springframework.beans.BeanUtils.copyProperties(userDO,result);
+        BeanUtils.copyProperties(userDO,result);
         return result;
     }
 
@@ -106,7 +108,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
             throw new ClientException("用户不存在");
         }
         //改为了登录就返回token（方便配合公网短链接试用，让大家都能用同一个账号密码登录）
-        Map<Object ,Object> hasLoginMap = stringRedisTemplate.opsForHash().entries("login_" + requestParam.getUsername());
+        Map<Object, Object> hasLoginMap = stringRedisTemplate.opsForHash().entries(USER_LOGIN_KEY + requestParam.getUsername());
         if (CollUtil.isNotEmpty(hasLoginMap)) {
             String token = hasLoginMap.keySet().stream()
                     .findFirst()
@@ -122,20 +124,20 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
          *  value: JSON字符串 用户信息
          */
         String uuid = UUID.randomUUID().toString();
-        stringRedisTemplate.opsForHash().put("login_" + requestParam.getUsername(),uuid,JSON.toJSONString(userDO));
-        //stringRedisTemplate.expire("login_" + requestParam.getUsername(),30L, TimeUnit.DAYS); //移除过期设置，不必重启后重新登录token
+        stringRedisTemplate.opsForHash().put(USER_LOGIN_KEY + requestParam.getUsername(), uuid, JSON.toJSONString(userDO));
+        stringRedisTemplate.expire(USER_LOGIN_KEY + requestParam.getUsername(), 30L, TimeUnit.DAYS);//移除过期设置，不必重启后重新登录token
         return new UserLoginRespDTO(uuid);
     }
 
     @Override
     public Boolean checkLogin(String username,String token) {
-        return stringRedisTemplate.opsForHash().get("login_"+username,token) != null;
+        return stringRedisTemplate.opsForHash().get(USER_LOGIN_KEY + username, token) != null;
     }
 
     @Override
     public void logout(String username, String token) {
         if(checkLogin(username,token)){
-            stringRedisTemplate.delete("login_"+username);
+            stringRedisTemplate.delete(USER_LOGIN_KEY + username);
             return;
         }
         throw new ClientException("用户Token不存在或用户未登录");

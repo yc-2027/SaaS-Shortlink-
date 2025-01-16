@@ -61,10 +61,10 @@ public class ShortLinkStatsSaveConsumer implements StreamListener<String, MapRec
 
 
     @Override
-    public void onMessage(MapRecord<String, String, String> message) {
+    public void onMessage(MapRecord<String, String, String> message) {//实现了listenner
         String stream = message.getStream();
         RecordId id = message.getId();
-        //被处理过
+        //判断当前的这个消息是否被消费过
         if (messageQueueIdempotentHandler.isMessageProcessed(id.toString())) {
             // 判断当前的这个消息流程是否执行完成
             if (messageQueueIdempotentHandler.isAccomplished(id.toString())) {
@@ -94,6 +94,7 @@ public class ShortLinkStatsSaveConsumer implements StreamListener<String, MapRec
         RReadWriteLock readWriteLock = redissonClient.getReadWriteLock(String.format(LOCK_GID_UPDATE_KEY, fullShortUrl));
         RLock rLock = readWriteLock.readLock();
         if (!rLock.tryLock()) {
+            //获取不了锁直接传入redis延迟队列里 过一段时间再重试
             delayShortLinkStatsProducer.send(statsRecord);
             return;
         }
