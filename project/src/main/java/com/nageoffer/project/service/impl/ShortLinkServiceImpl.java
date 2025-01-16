@@ -90,7 +90,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
     @Value("${short-link.domain.default}")
     private String createShortLinkDefaultDomain;
 
-
+    @Transactional(rollbackFor = Exception.class)//因为同时插入两个数据库
     @Override
     public ShortLinkCreateRespDTO createShortLink(ShortLinkCreateReqDTO requestParam) {
         verificationWhitelist(requestParam.getOriginUrl());
@@ -119,7 +119,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                 .build();
         try {
             baseMapper.insert(shortLinkDO);
-            shortLinkGotoMapper.insert(shortLinkGotoDO);
+            shortLinkGotoMapper.insert(shortLinkGotoDO);//同时插入两个数据库，所以得增加事务方法
         } catch (DuplicateKeyException ex) {
             // TODO 已经误判得短链接如何处理
             //generatorSuffix里已经检查是否存在布隆过滤器里
