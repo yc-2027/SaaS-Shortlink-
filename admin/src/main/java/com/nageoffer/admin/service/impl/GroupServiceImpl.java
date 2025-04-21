@@ -14,7 +14,7 @@ import com.nageoffer.admin.dao.mapper.GroupMapper;
 import com.nageoffer.admin.dto.req.ShortLinkGroupSortRequestDTO;
 import com.nageoffer.admin.dto.req.ShortLinkGroupUpdateReqDTO;
 import com.nageoffer.admin.dto.resp.ShortLinkGroupRespDTO;
-import com.nageoffer.admin.remote.dto.ShortLinkRemoteService;
+import com.nageoffer.admin.remote.ShortLinkActualRemoteService;
 import com.nageoffer.admin.remote.dto.resp.ShortLinkGroupCountQueryRespDTO;
 import com.nageoffer.admin.service.GroupService;
 import com.nageoffer.admin.toolkit.RandomGenerator;
@@ -22,8 +22,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
-import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Objects;
@@ -39,14 +39,13 @@ import static com.nageoffer.admin.common.constant.RedisCacheConstant.LOCK_GROUP_
 @RequiredArgsConstructor
 public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implements GroupService {
 
+    private final ShortLinkActualRemoteService shortLinkActualRemoteService;
     private final RedissonClient redissonClient;
 
 
     @Value("${short-link.group.max-num}")
     private Integer groupMaxNum;
 
-    ShortLinkRemoteService shortLinkRemoteService = new ShortLinkRemoteService() {
-    };
 
     @Override
     public void saveGroup(String groupName) {
@@ -93,7 +92,7 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implemen
                 .eq(GroupDO::getUsername, username)
                 .orderByDesc(GroupDO::getSortOrder, GroupDO::getUpdateTime);
         List<GroupDO> groupDOList = baseMapper.selectList(queryWrapper);
-        Result<List<ShortLinkGroupCountQueryRespDTO>> listResult = shortLinkRemoteService
+        Result<List<ShortLinkGroupCountQueryRespDTO>> listResult = shortLinkActualRemoteService
                 .listGroupShortLinkCount(groupDOList.stream().map(GroupDO::getGid).toList());
         List<ShortLinkGroupRespDTO> shortLinkGroupRespDTOList = BeanUtil
                 .copyToList(groupDOList, ShortLinkGroupRespDTO.class);

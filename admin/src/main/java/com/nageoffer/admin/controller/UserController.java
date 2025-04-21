@@ -27,12 +27,6 @@ public class UserController {
     private final UserService userService;
     @GetMapping("/api/short-link/admin/v1/user/{username}")
     public Result<UserRespDTO> getUserByUserName(@PathVariable("username") String username){
-//        UserRespDTO result = userService.getUserByUsername(username);
-//        if(result == null){
-//            return new Result<UserRespDTO>().setCode(UserErrorCodeEnum.USER_NULL.code()).setMessage(UserErrorCodeEnum.USER_NULL.message());
-//        }else {
-//            return new Result<UserRespDTO>().setCode("0").setData(result);
-//        }
         return Results.success(userService.getUserByUsername(username));//优化后的代码 为什么这么写
     }
 

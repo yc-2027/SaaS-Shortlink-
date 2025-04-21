@@ -18,6 +18,7 @@ public interface ShortLinkMapper extends BaseMapper<ShortLinkDO> {
      * @param fullShortUrl
      * @param totalPv
      * @param totalUv
+     *
      * @param totalUip
      */
     @Update("update t_link set total_pv = total_pv + #{totalPv},total_uv = total_uv + #{totalUv},total_uip = total_uip + #{totalUip} where gid = #{gid} and full_short_url = #{fullShortUrl}")

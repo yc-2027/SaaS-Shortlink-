@@ -1,9 +1,9 @@
-
-
 server:
   port: 8002
 
 spring:
+  application:
+    name: shortlink-admin
   datasource:
     # ShardingSphere 对 Driver 自定义，实现分库分表等隐藏逻辑
     driver-class-name: org.apache.shardingsphere.driver.ShardingSphereDriver
@@ -13,11 +13,19 @@ spring:
     redis:
       host: 127.0.0.1
       port: 6379
+  cloud:
+    nacos:
+      discovery:
+        enabled: true
+        server-addr: 127.0.0.1:8848
+        username: nacos
+        password: nacos
 short-link:
   group:
     max-num: 20
+  # 流量控制 true开启 false关闭
   flow-limit:
-    enable: true
+    enable: false
     time-window: 1
     max-access-count: 3
 redisson:

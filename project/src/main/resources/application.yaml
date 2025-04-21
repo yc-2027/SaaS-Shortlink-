@@ -1,6 +1,14 @@
 server:
   port: 8001
+  tomcat:
+    connection-timeout: 20000 # 连接超时时间（毫秒）
+    threads:
+      max: 200 # 最大工作线程数
+    accept-count: 100 # 等待队列长度
+    max-http-form-post-size: 65536 # 请求头最大限制（字节）
 spring:
+  application:
+    name: shortlink-project
   mvc:
     view:
       prefix: /templates/
@@ -14,6 +22,24 @@ spring:
     redis:
       host: 127.0.0.1
       port: 6379
+  cloud:
+    nacos:
+      discovery:
+        enabled: true
+        server-addr: 127.0.0.1:8848
+        username: nacos
+        password: nacos
+rocketmq:
+  name-server: 127.0.0.1:9876
+  producer:
+    group: short-link_project-service_stats-save_pg
+    topic: short-link_project-service_topic
+    send-message-timeout: 2000
+    retry-times-when-send-failed: 1
+    retry-times-when-send-async-failed: 1
+  consumer:
+    group: short-link_project-service_stats-save_cg
+
 redisson:
   # 单机模式配置
   singleServerConfig:
@@ -37,6 +63,8 @@ short-link:
         - juejin.cn
         - cnblogs.com
         - github.com
+        - xiaolincoding.com
+        - localhost
 mybatis-plus:
   configuration:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
