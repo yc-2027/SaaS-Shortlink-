@@ -76,7 +76,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
                 try {
                     int inserted = baseMapper.insert(BeanUtil.toBean(requestParam, UserDO.class));//注意这里
                     if (inserted < 1) {
-                        throw new ClientException(USER_INSERT_ERROR);
+                        throw new ClientException(USER_SAVE_ERROR);
                     }
                 }catch (DuplicateKeyException ex){
                     throw new ClientException(USER_EXIST);
