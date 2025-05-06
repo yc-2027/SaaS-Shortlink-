@@ -30,6 +30,7 @@ import com.nageoffer.project.service.LinkStatsTodayService;
 import com.nageoffer.project.service.ShortLinkService;
 import com.nageoffer.project.tookit.HashUtil;
 import com.nageoffer.project.tookit.LinkUtil;
+import com.nageoffer.project.utils.SecureShortLinkGenerator;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.Cookie;
@@ -92,9 +93,11 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
 
     @Transactional(rollbackFor = Exception.class)//因为同时插入两个数据库
     @Override
-    public ShortLinkCreateRespDTO createShortLink(ShortLinkCreateReqDTO requestParam) {
+    public ShortLinkCreateRespDTO createShortLink(ShortLinkCreateReqDTO requestParam) throws Exception {
         verificationWhitelist(requestParam.getOriginUrl());
-        String shortLinkSuffix = generatorSuffix(requestParam);//后缀
+        //String shortLinkSuffix = generatorSuffix(requestParam);//后缀
+        SecureShortLinkGenerator secureShortLinkGenerator = new SecureShortLinkGenerator(0,0);
+        String shortLinkSuffix = secureShortLinkGenerator.generateSuffix();
         String fullShortUrl = StrBuilder.create(createShortLinkDefaultDomain)
                 .append("/")
                 .append(shortLinkSuffix)
