@@ -53,6 +53,10 @@ redisson:
 short-link:
   domain:
     default: http://nurl.ink:8001
+shortlink:
+  snowflake:
+    datacenter-id: 1
+    worker-id:     1
   goto-domain:
     white-list:
       enable: true

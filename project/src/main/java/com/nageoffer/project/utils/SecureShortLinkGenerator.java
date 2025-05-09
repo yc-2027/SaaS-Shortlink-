@@ -1,10 +1,14 @@
 package com.nageoffer.project.utils;
 
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
+@Component
 public class SecureShortLinkGenerator {
     private final SnowflakeIdGenerator snowflake;
     private final MessageDigest sha256;
@@ -14,7 +18,9 @@ public class SecureShortLinkGenerator {
             "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
                     .toCharArray();  // 共 62 字符
 
-    public SecureShortLinkGenerator(int datacenterId, int workerId) {
+    public SecureShortLinkGenerator(
+            @Value("${shortlink.snowflake.datacenter-id}") int datacenterId,
+            @Value("${shortlink.snowflake.worker-id}") int workerId) {
         this.snowflake = new SnowflakeIdGenerator(datacenterId, workerId);
         try {
             this.sha256 = MessageDigest.getInstance("SHA-256");
