@@ -25,6 +25,8 @@ import com.nageoffer.project.dto.req.ShortLinkCreateReqDTO;
 import com.nageoffer.project.dto.req.ShortLinkPageReqDTO;
 import com.nageoffer.project.dto.req.ShortLinkUpdateReqDTO;
 import com.nageoffer.project.dto.resp.*;
+import com.nageoffer.project.mq.producer.DelayShortLinkStatsProducer;
+import com.nageoffer.project.mq.producer.ShortLinkStatsSaveProducer;
 import com.nageoffer.project.service.LinkStatsTodayService;
 import com.nageoffer.project.service.ShortLinkService;
 import com.nageoffer.project.tookit.LinkUtil;
@@ -81,6 +83,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
     private final LinkNetworkStatsMapper linkNetworkStatsMapper;
     private final LinkStatsTodayMapper linkStatsTodayMapper;
     private final LinkStatsTodayService linkStatsTodayService;
+    private final ShortLinkStatsSaveProducer shortLinkStatsSaveProducer;
 
     private final GotoDomainWhiteListConfiguration gotoDomainWhiteListConfiguration;
     private final SecureShortLinkGenerator secureShortLinkGenerator;
@@ -512,7 +515,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
         producerMap.put("fullShortUrl", fullShortUrl);
         producerMap.put("gid", gid);
         producerMap.put("statsRecord", JSON.toJSONString(statsRecord));
-        //shortLinkStatsSaveProducer.send(producerMap);
+        shortLinkStatsSaveProducer.send(producerMap);
     }
 
 //    private String generatorSuffix(ShortLinkCreateReqDTO requestParam) {
