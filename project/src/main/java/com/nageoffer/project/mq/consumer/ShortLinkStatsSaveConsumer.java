@@ -208,7 +208,7 @@ import static com.nageoffer.project.common.constant.ShortLinkConstant.IP_API_REM
 @RequiredArgsConstructor
 @RocketMQMessageListener(
         topic = "${rocketmq.producer.topic}",
-        consumerGroup = "${rocketmq.consumer.group}"
+        consumerGroup = "short-link_project-service_stats-save_cg"
 )
 public class ShortLinkStatsSaveConsumer implements RocketMQListener<Map<String, String>> {
 

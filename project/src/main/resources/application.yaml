@@ -31,14 +31,35 @@ spring:
         password: nacos
 rocketmq:
   name-server: 127.0.0.1:9876
+  # —— 第一套 Producer：stats-save ——
   producer:
     group: short-link_project-service_stats-save_pg
     topic: short-link_project-service_topic
     send-message-timeout: 2000
     retry-times-when-send-failed: 1
     retry-times-when-send-async-failed: 1
-  consumer:
-    group: short-link_project-service_stats-save_cg
+#  consumer:
+#    group: short-link_project-service_stats-save_cg
+
+# —— 第二套 Producer：create ——（Starter 不会自动装配，稍后手动注册）
+second-producer:
+  group: short-link_project-service-create-pg
+  topic: short-link_producer-service-create
+  send-message-timeout: 2000
+  retry-times-when-send-failed: 1
+
+#create-producer:
+#  group: short-link_project-service-create-pg
+#  topic: short-link_producer-service-create
+#  send-message-timeout: 2000
+#  retry-times-when-send-failed: 1
+
+#second-mq:
+#  producer: short-link_project-service-create-pg
+#  topic: short-link_producer-service-create
+#  send-message-timeout: 2000
+#  retry-times-when-send-failed: 1
+
 
 redisson:
   # 单机模式配置

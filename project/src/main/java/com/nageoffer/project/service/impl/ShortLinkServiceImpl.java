@@ -26,6 +26,7 @@ import com.nageoffer.project.dto.req.ShortLinkPageReqDTO;
 import com.nageoffer.project.dto.req.ShortLinkUpdateReqDTO;
 import com.nageoffer.project.dto.resp.*;
 import com.nageoffer.project.mq.producer.DelayShortLinkStatsProducer;
+import com.nageoffer.project.mq.producer.ShortLinkCreateProducer;
 import com.nageoffer.project.mq.producer.ShortLinkStatsSaveProducer;
 import com.nageoffer.project.service.LinkStatsTodayService;
 import com.nageoffer.project.service.ShortLinkService;
@@ -84,6 +85,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
     private final LinkStatsTodayMapper linkStatsTodayMapper;
     private final LinkStatsTodayService linkStatsTodayService;
     private final ShortLinkStatsSaveProducer shortLinkStatsSaveProducer;
+    private final ShortLinkCreateProducer shortLinkCreateProducer;
 
     private final GotoDomainWhiteListConfiguration gotoDomainWhiteListConfiguration;
     private final SecureShortLinkGenerator secureShortLinkGenerator;
@@ -127,24 +129,12 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                 .fullShortUrl(fullShortUrl)
                 .gid(requestParam.getGid())
                 .build();
-        try {
-            //baseMapper.insert(shortLinkDO);
-            shortLinkMapper.insert(shortLinkDO);
-            shortLinkGotoMapper.insert(shortLinkGotoDO);//同时插入两个数据库，所以得增加事务方法
-        } catch (DuplicateKeyException ex) {
-            // TODO 已经误判得短链接如何处理
-            //generatorSuffix里已经检查是否存在布隆过滤器里
-            throw new ServiceException(String.format("短链接：{} 重复入库", fullShortUrl));
 
-        }
-        //缓存预热
-        long timeout = LinkUtil.getLinkCacheValidDate(requestParam.getValidDate());
-        System.out.println("设置的 timeout 值为（秒）: " + timeout * 0.001);
-        redis.opsForValue()
-                .set(String.format(GOTO_SHORT_LINK_KEY, fullShortUrl),//http开头
-                        requestParam.getOriginUrl(), LinkUtil.getLinkCacheValidDate(requestParam.getValidDate()), TimeUnit.MILLISECONDS);
-        shortUriCreateCachePenetrationBloomFilter.add(fullShortUrl);
-        //shortUriCreateCachePenetrationBloomFilter.tryInit()
+        Map<String, String> producerMap = new HashMap<>();
+        producerMap.put("CreateShortLinkDefaultDomain", createShortLinkDefaultDomain);
+        producerMap.put("suffix", suffix);
+        producerMap.put("requestParam", JSON.toJSONString(requestParam));
+        shortLinkCreateProducer.send(producerMap);
         return ShortLinkCreateRespDTO.builder()
                 .fullShortUrl(shortLinkDO.getFullShortUrl())
                 .originUrl(requestParam.getOriginUrl())
@@ -517,6 +507,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
         producerMap.put("statsRecord", JSON.toJSONString(statsRecord));
         shortLinkStatsSaveProducer.send(producerMap);
     }
+
 
 //    private String generatorSuffix(ShortLinkCreateReqDTO requestParam) {
 //        String shortUri;
