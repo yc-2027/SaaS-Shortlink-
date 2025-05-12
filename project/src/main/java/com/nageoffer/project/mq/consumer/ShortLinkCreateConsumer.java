@@ -8,6 +8,7 @@ import com.nageoffer.project.dao.entity.ShortLinkDO;
 import com.nageoffer.project.dao.entity.ShortLinkGotoDO;
 import com.nageoffer.project.dao.mapper.ShortLinkGotoMapper;
 import com.nageoffer.project.dao.mapper.ShortLinkMapper;
+import com.nageoffer.project.dto.ShortLinkMsg;
 import com.nageoffer.project.dto.biz.ShortLinkStatsRecordDTO;
 import com.nageoffer.project.dto.req.ShortLinkCreateReqDTO;
 import com.nageoffer.project.mq.idempotent.MessageQueueIdempotentHandler;
@@ -20,6 +21,10 @@ import org.apache.rocketmq.spring.core.RocketMQListener;
 import org.redisson.api.RBloomFilter;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Recover;
+import org.springframework.retry.annotation.Retryable;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
@@ -41,6 +46,10 @@ public class ShortLinkCreateConsumer implements RocketMQListener<Map<String,Stri
     private final ShortLinkMapper shortLinkMapper;
     private final ShortLinkGotoMapper shortLinkGotoMapper;
     private final StringRedisTemplate redis;
+
+    @Retryable(value=DuplicateKeyException.class, maxAttempts=3,
+            backoff=@Backoff(delay=100, multiplier=2))
+    @Async("shortlinkExecutor")
     @Override
     public void onMessage(Map<String, String> producerMap) {
         String keys = producerMap.get("keys");
@@ -67,6 +76,11 @@ public class ShortLinkCreateConsumer implements RocketMQListener<Map<String,Stri
             throw ex;
         }
         messageQueueIdempotentHandler.setAccomplished(keys);
+    }
+
+    @Recover
+    public void recover(DuplicateKeyException ex, ShortLinkMsg m){
+        log.error("仍冲突，抛弃或入DLQ: {}", m.getFullUrl(), ex);
     }
 
     public void actualCreateShortLink(String createShortLinkDefaultDomain,String suffix,ShortLinkCreateReqDTO requestParam){

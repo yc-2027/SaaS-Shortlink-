@@ -133,6 +133,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
         Map<String, String> producerMap = new HashMap<>();
         producerMap.put("CreateShortLinkDefaultDomain", createShortLinkDefaultDomain);
         producerMap.put("suffix", suffix);
+        producerMap.put("fullShortUrl", fullShortUrl);
         producerMap.put("requestParam", JSON.toJSONString(requestParam));
         shortLinkCreateProducer.send(producerMap);
         return ShortLinkCreateRespDTO.builder()
@@ -168,6 +169,15 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                 .baseLinkInfos(result)
                 .build();
     }
+//    @Override
+//    public ShortLinkBatchCreateRespDTO batchCreateShortLink(ShortLinkBatchCreateReqDTO requestParam) {
+//        List<String> originUrls = requestParam.getOriginUrls();
+//        List<String> describes = requestParam.getDescribes();
+//        int size = originUrls.size();
+//        for(int i = 0;i < size;i ++){
+//
+//        }
+//    }
 
 
     @Transactional(rollbackFor = Exception.class)
@@ -541,9 +551,8 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                     .append("/")
                     .append(suffix)
                     .toString();
-
             if(shortUriCreateCachePenetrationBloomFilter.contains(full_short_url))continue;
-            boolean locked = redis.opsForValue().setIfAbsent("reserve: " + full_short_url,"1", Duration.ofSeconds(2));
+            boolean locked = redis.opsForValue().setIfAbsent("reserve:" + full_short_url,"1", Duration.ofSeconds(2));
             if(locked){
                 shortUriCreateCachePenetrationBloomFilter.add(full_short_url);
                 return suffix;
