@@ -39,6 +39,10 @@ public class UserFlowRiskControlFilter implements Filter {
     @SneakyThrows
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain filterChain) throws IOException, ServletException {
+        if(userFlowRiskControlConfiguration.getEnable() == false){
+            filterChain.doFilter(request, response);
+            return;
+        }
         DefaultRedisScript<Long> redisScript = new DefaultRedisScript<>();
         redisScript.setScriptSource(new ResourceScriptSource(new ClassPathResource(USER_FLOW_RISK_CONTROL_LUA_SCRIPT_PATH)));
         redisScript.setResultType(Long.class);//lua脚本必须返回Long

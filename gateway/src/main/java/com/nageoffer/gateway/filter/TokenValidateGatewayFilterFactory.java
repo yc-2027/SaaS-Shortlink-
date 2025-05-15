@@ -40,11 +40,13 @@ public class TokenValidateGatewayFilterFactory extends AbstractGatewayFilterFact
             ServerHttpRequest request = exchange.getRequest();
             String requestPath = request.getPath().toString();
             String requestMethod = request.getMethod().name();
+            //白名单跳过验证放行（注册接口）
             if (!isPathInWhiteList(requestPath, requestMethod, config.getWhitePathList())) {
                 String username = request.getHeaders().getFirst("username");
                 String token = request.getHeaders().getFirst("token");
                 Object userInfo;
-                if (StringUtils.hasText(username) && StringUtils.hasText(token) && (userInfo = stringRedisTemplate.opsForHash().get("short-link:login:" + username, token)) != null) {
+                if (StringUtils.hasText(username) && StringUtils.hasText(token)
+                        && (userInfo = stringRedisTemplate.opsForHash().get("short-link:login:" + username, token)) != null) {
                     JSONObject userInfoJsonObject = JSON.parseObject(userInfo.toString());
                     ServerHttpRequest.Builder builder = exchange.getRequest().mutate().headers(httpHeaders -> {
                         httpHeaders.set("userId", userInfoJsonObject.getString("id"));

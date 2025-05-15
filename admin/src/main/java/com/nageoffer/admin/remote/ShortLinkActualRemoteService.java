@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
-@FeignClient("shortlink-project")
+@FeignClient("short-link-project")
 public interface ShortLinkActualRemoteService {
     /**
      * 创建短链接

@@ -1,24 +1,29 @@
 server:
   port: 8000
+
 spring:
   application:
     name: short-link-gateway
+
   data:
     redis:
       host: 127.0.0.1
       port: 6379
       password: 123456
+
   cloud:
     nacos:
       discovery:
         server-addr: 127.0.0.1:8848
+
     gateway:
       routes:
         - id: short-link-admin
-          uri: lb://short-link-admin/api/short-link/admin/**
+          uri: lb://short-link-admin                      # 仅指定服务名，启用负载均衡
           predicates:
-            - Path=/api/short-link/admin/**
+            - Path=/api/short-link/admin/**               # 匹配所有 admin 前缀请求
           filters:
+#            - StripPrefix=2                                # 去掉 /api/short-link
             - name: TokenValidate
               args:
                 whitePathList:
@@ -26,8 +31,17 @@ spring:
                   - /api/short-link/admin/v1/user/has-username
 
         - id: short-link-project
-          uri: lb://short-link-project/api/short-link/**
+          uri: lb://short-link-project                    # 同上，仅指定服务名
           predicates:
-            - Path=/api/short-link/**
+            - Path=/api/short-link/**                     # 匹配所有项目前缀请求
           filters:
+            - StripPrefix=2                                # 去掉 /api/short-link
             - name: TokenValidate
+
+        - id: short-link-redirect
+          uri: lb://short-link-project      # 仅服务名，启用 Nacos 负载均衡
+          predicates:
+              - Path=/{code}                  # 捕获根路径下任意单级短链
+          filters:
+              - RewritePath=/(?<code>.*), /${code}
+#              - name: TokenValidate   #访问短连接不需要鉴权

@@ -49,8 +49,10 @@ import org.redisson.api.RReadWriteLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -387,6 +389,10 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                 .map(String::valueOf)
                 .map(each -> ":" + each)
                 .orElse("");
+        if(serverName.equals("10.100.1.61")) serverName =  serverName.replace("10.100.1.61","nurl.ink");
+            //http://nurl.ink:8000/I3X2Xw
+            //serverName = "nurl.ink";
+
         String fullShortUrl = "http://" + serverName + serverPort + "/" + shortUri;
         String originalLink = redis.opsForValue()
                 .get(String.format(GOTO_SHORT_LINK_KEY, fullShortUrl));
@@ -408,12 +414,41 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
             ((HttpServletResponse) response).sendRedirect("/page/notfound");
             return;
         }
+        //没有安装RedisBloom,Redisson RBloomFilter不支持BF.exist
+//        DefaultRedisScript<Long> script = new DefaultRedisScript<>();
+//        script.setLocation(new ClassPathResource("shortlink_restore.lua"));
+//        script.setResultType(Long.class);
+//
+//        Long res = redis.execute(
+//                script,
+//                List.of("shortUriCreateCachePenetrationBloomFilter",
+//                        "GOTO_SHORT_LINK:"+fullShortUrl,
+//                        "GOTO_IS_NULL_SHORT_LINK:"+fullShortUrl),
+//                fullShortUrl);
+//        int r = res.intValue();
+//        switch (r){
+//            case 1:
+//                String originalLink = redis.opsForValue().get(String.format(GOTO_SHORT_LINK_KEY, fullShortUrl));
+//                ShortLinkStatsRecordDTO statsRecord = buildLinkStatsRecordAndSetUser(fullShortUrl, request, response);
+//                shortLinkStats(fullShortUrl, null, statsRecord);
+//                ((HttpServletResponse) response).sendRedirect(originalLink);//response这里需要理解一下！
+//                return;
+//            case 2://查空值缓存（“-”）
+//                ((HttpServletResponse) response).sendRedirect("/page/notfound");
+//                return;
+//            case 3:    //Bloom-Filter 判断
+//                ((HttpServletResponse) response).sendRedirect("/page/notfound");
+//                return;
+//            case 4:
+//                break;
+//        }
+
 
 
         RLock lock = redissonClient.getLock(String.format(LOCK_GOTO_SHORT_LINK_KEY, fullShortUrl));
         lock.lock();
         try {
-            originalLink = redis.opsForValue()
+             originalLink = redis.opsForValue()
                     .get(String.format(GOTO_SHORT_LINK_KEY, fullShortUrl));
             if (StrUtil.isNotBlank(originalLink)) {
                 ShortLinkStatsRecordDTO statsRecord = buildLinkStatsRecordAndSetUser(fullShortUrl, request, response);

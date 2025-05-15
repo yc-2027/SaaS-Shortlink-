@@ -8,7 +8,7 @@ server:
     max-http-form-post-size: 65536 # 请求头最大限制（字节）
 spring:
   application:
-    name: shortlink-project
+    name: short-link-project
   mvc:
     view:
       prefix: /templates/
