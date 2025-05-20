@@ -44,27 +44,37 @@ public interface LinkAccessStatsMapper extends BaseMapper<LinkAccessStatsDO> {
             "    t_link_access_stats " +
             "WHERE " +
             "    full_short_url = #{param.fullShortUrl} " +
-            "    AND gid = #{param.gid} " +
+//            "    AND gid = #{param.gid} " +
             "    AND date BETWEEN #{param.startDate} and #{param.endDate} " +
             "GROUP BY " +
-            "    full_short_url, gid, date;")
+            "    full_short_url,  date;")
     List<LinkAccessStatsDO> listStatsByShortLink(@Param("param") ShortLinkStatsReqDTO requestParam);
 
     /**
      * 根据分组获取指定日期内基础监控数据
      */
-    @Select("SELECT " +
-            "    date, " +
-            "    SUM(pv) AS pv, " +
-            "    SUM(uv) AS uv, " +
-            "    SUM(uip) AS uip " +
-            "FROM " +
-            "    t_link_access_stats " +
-            "WHERE " +
-            "    gid = #{param.gid} " +
-            "    AND date BETWEEN #{param.startDate} and #{param.endDate} " +
-            "GROUP BY " +
-            "    gid, date;")
+//    @Select("SELECT " +
+//            "    date, " +
+//            "    SUM(pv) AS pv, " +
+//            "    SUM(uv) AS uv, " +
+//            "    SUM(uip) AS uip " +
+//            "FROM " +
+//            "    t_link_access_stats " +
+//            "WHERE " +
+//            "    gid = #{param.gid} " +
+//            "    AND date BETWEEN #{param.startDate} and #{param.endDate} " +
+//            "GROUP BY " +
+//            "    gid, date;")
+    @Select(
+            """
+                    SELECT date,SUM(pv) AS pv,SUM(uv) AS uv,SUM(uip) AS uip
+                    FROM t_link_access_stats as s
+                    JOIN t_link  as g on g.full_short_url = s.full_short_url
+                    WHERE g.gid = #{param.gid}
+                    AND s.date BETWEEN #{param.startDate} and #{param.endDate}
+                    GROUP BY s.date
+                    """
+    )
     List<LinkAccessStatsDO> listStatsByGroup(@Param("param") ShortLinkGroupStatsReqDTO requestParam);
 
     /**
@@ -77,25 +87,33 @@ public interface LinkAccessStatsMapper extends BaseMapper<LinkAccessStatsDO> {
             "    t_link_access_stats " +
             "WHERE " +
             "    full_short_url = #{param.fullShortUrl} " +
-            "    AND gid = #{param.gid} " +
+//            "    AND gid = #{param.gid} " +
             "    AND date BETWEEN #{param.startDate} and #{param.endDate} " +
             "GROUP BY " +
-            "    full_short_url, gid, hour;")
+            "    full_short_url,  hour;")
     List<LinkAccessStatsDO> listHourStatsByShortLink(@Param("param") ShortLinkStatsReqDTO requestParam);
 
     /**
      * 根据分组获取指定日期内小时基础监控数据
      */
-    @Select("SELECT " +
-            "    hour, " +
-            "    SUM(pv) AS pv " +
-            "FROM " +
-            "    t_link_access_stats " +
-            "WHERE " +
-            "    gid = #{param.gid} " +
-            "    AND date BETWEEN #{param.startDate} and #{param.endDate} " +
-            "GROUP BY " +
-            "    gid, hour;")
+//    @Select("SELECT " +
+//            "    hour, " +
+//            "    SUM(pv) AS pv " +
+//            "FROM " +
+//            "    t_link_access_stats " +
+//            "WHERE " +
+////            "    gid = #{param.gid}  AND" +
+//            "    date BETWEEN #{param.startDate} and #{param.endDate} " +
+//            "GROUP BY " +
+//            "     hour;")
+    @Select("""
+    select hour,SUM(pv) AS pv from t_link_access_stats as s
+    join t_link as t
+    on s.full_short_url = t.full_short_url
+    where t.gid = #{param.gid}
+    and s.date BETWEEN #{param.startDate} and #{param.endDate}
+    group by hour;
+    """)
     List<LinkAccessStatsDO> listHourStatsByGroup(@Param("param") ShortLinkGroupStatsReqDTO requestParam);
 
     /**
@@ -108,24 +126,33 @@ public interface LinkAccessStatsMapper extends BaseMapper<LinkAccessStatsDO> {
             "    t_link_access_stats " +
             "WHERE " +
             "    full_short_url = #{param.fullShortUrl} " +
-            "    AND gid = #{param.gid} " +
+//            "    AND gid = #{param.gid} " +
             "    AND date BETWEEN #{param.startDate} and #{param.endDate} " +
             "GROUP BY " +
-            "    full_short_url, gid, weekday;")
+            "    full_short_url,  weekday;")
     List<LinkAccessStatsDO> listWeekdayStatsByShortLink(@Param("param") ShortLinkStatsReqDTO requestParam);
 
     /**
      * 根据分组获取指定日期内小时基础监控数据
      */
-    @Select("SELECT " +
-            "    weekday, " +
-            "    SUM(pv) AS pv " +
-            "FROM " +
-            "    t_link_access_stats " +
-            "WHERE " +
-            "    gid = #{param.gid} " +
-            "    AND date BETWEEN #{param.startDate} and #{param.endDate} " +
-            "GROUP BY " +
-            "    gid, weekday;")
+//    @Select("SELECT " +
+//            "    weekday, " +
+//            "    SUM(pv) AS pv " +
+//            "FROM " +
+//            "    t_link_access_stats " +
+//            "WHERE " +
+//            "    gid = #{param.gid} " +
+//            "    AND date BETWEEN #{param.startDate} and #{param.endDate} " +
+//            "GROUP BY " +
+//            "    gid, weekday;")
+    @Select("""
+        SELECT weekday,SUM(pv) AS pv
+        FROM t_link_access_stats as s
+        JOIN t_link as t 
+        ON s.full_short_url = t.full_short_url
+        WHERE t.gid = #{param.gid}
+        AND s.date BETWEEN #{param.startDate} and #{param.endDate}
+        GROUP BY s.weekday;
+    """)
     List<LinkAccessStatsDO> listWeekdayStatsByGroup(@Param("param") ShortLinkGroupStatsReqDTO requestParam);
 }

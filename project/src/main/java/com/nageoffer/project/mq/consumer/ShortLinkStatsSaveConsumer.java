@@ -285,29 +285,9 @@ public class ShortLinkStatsSaveConsumer implements RocketMQListener<Map<String, 
             String actualRegionName = "未知";
             String actualCity = "未知";
             String actualCountry = "未知";
-
-//            Map<String, Object> localeParamMap = new HashMap<>();
-//            localeParamMap.put("key", statsLocaleAmapKey);
-//            localeParamMap.put("ip", statsRecord.getRemoteAddr());
-//            String localeResultStr = HttpUtil.get(AMAP_REMOTE_URL, localeParamMap);
-//            JSONObject localeResultObj = JSON.parseObject(localeResultStr);
-//            String infoCode = localeResultObj.getString("infocode");
-//            String actualRegionName = "未知";
-//            String actualCity = "未知";
             if (StrUtil.isNotBlank(infoCode) && StrUtil.equals(infoCode, "10000")) {
                 String regionName = localeResultObj.getString("regionName");
                 boolean unknownFlag = StrUtil.equals(regionName, "[]");
-//                LinkLocaleStatsDO linkLocaleStatsDO = LinkLocaleStatsDO.builder()
-//                        .province(actualProvince = unknownFlag ? actualProvince : province)
-//                        .city(actualCity = unknownFlag ? actualCity : localeResultObj.getString("city"))
-//                        .adcode(unknownFlag ? "未知" : localeResultObj.getString("adcode"))
-//                        .cnt(1)
-//                        .fullShortUrl(fullShortUrl)
-//                        .country("中国")
-//                        .gid(gid)
-//                        .date(new Date())
-//                        .build();
-//                linkLocaleStatsMapper.shortLinkLocaleState(linkLocaleStatsDO);
                 LinkLocaleStatsDO linkLocaleStatsDO = LinkLocaleStatsDO.builder()
                         .regionName(actualRegionName = unknownFlag ? actualRegionName : regionName)
                         .city(actualCity = unknownFlag ? actualCity : localeResultObj.getString("city"))
@@ -360,7 +340,7 @@ public class ShortLinkStatsSaveConsumer implements RocketMQListener<Map<String, 
                     .network(statsRecord.getNetwork())
                     .device(statsRecord.getDevice())
                     .locale(StrUtil.join("-", "中国", actualRegionName, actualCity))
-                    .gid(gid)
+//                    .gid(gid)
                     .fullShortUrl(fullShortUrl)
                     .build();
             linkAccessLogsMapper.insert(linkAccessLogsDO);
@@ -369,7 +349,7 @@ public class ShortLinkStatsSaveConsumer implements RocketMQListener<Map<String, 
                     .todayPv(1)
                     .todayUv(statsRecord.getUvFirstFlag() ? 1 : 0)
                     .todayUip(statsRecord.getUipFirstFlag() ? 1 : 0)
-                    .gid(gid)
+//                    .gid(gid)
                     .fullShortUrl(fullShortUrl)
                     .date(new Date())
                     .build();

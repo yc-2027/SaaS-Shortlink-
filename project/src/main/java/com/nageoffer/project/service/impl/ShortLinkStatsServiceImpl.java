@@ -399,19 +399,12 @@ public class ShortLinkStatsServiceImpl implements ShortLinkStatsService {
 
     @Override
     public IPage<ShortLinkStatsAccessRecordRespDTO> shortLinkStatsAccessRecord(ShortLinkStatsAccessRecordReqDTO requestParam) {
-        LambdaQueryWrapper<LinkAccessLogsDO> queryWrapper = Wrappers.lambdaQuery(LinkAccessLogsDO.class)
-                .eq(LinkAccessLogsDO::getGid, requestParam.getGid())
-                .eq(LinkAccessLogsDO::getFullShortUrl, requestParam.getFullShortUrl())
-                .between(LinkAccessLogsDO::getCreateTime, requestParam.getStartDate(), requestParam.getEndDate())
-                .eq(LinkAccessLogsDO::getDelFlag, 0)
-                .orderByDesc(LinkAccessLogsDO::getCreateTime);
-        IPage<LinkAccessLogsDO> linkAccessLogsDOIPage = linkAccessLogsMapper.selectPage(requestParam, queryWrapper);
+        IPage<LinkAccessLogsDO> linkAccessLogsDOIPage = linkAccessLogsMapper.ShortLinkStatsByPage(requestParam);
         IPage<ShortLinkStatsAccessRecordRespDTO> actualResult = linkAccessLogsDOIPage.convert(each -> BeanUtil.toBean(each, ShortLinkStatsAccessRecordRespDTO.class));
         List<String> userAccessLogsList = actualResult.getRecords().stream()
                 .map(ShortLinkStatsAccessRecordRespDTO::getUser)
                 .toList();
         List<Map<String, Object>> uvTypeList = linkAccessLogsMapper.selectUvTypeByUsers(
-                requestParam.getGid(),
                 requestParam.getFullShortUrl(),
                 requestParam.getStartDate(),
                 requestParam.getEndDate(),

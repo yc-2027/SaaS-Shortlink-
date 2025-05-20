@@ -25,10 +25,10 @@ public class LinkStatsTodayDO extends BaseDO {
      */
     private Long id;
 
-    /**
-     * 分组标识
-     */
-    private String gid;
+//    /**
+//     * 分组标识
+//     */
+//    private String gid;
 
     /**
      * 短链接

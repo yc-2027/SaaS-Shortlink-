@@ -45,6 +45,7 @@ public class TokenValidateGatewayFilterFactory extends AbstractGatewayFilterFact
                 String username = request.getHeaders().getFirst("username");
                 String token = request.getHeaders().getFirst("token");
                 Object userInfo;
+                //Redis里Hash数据结构，key和hashkey一起验证
                 if (StringUtils.hasText(username) && StringUtils.hasText(token)
                         && (userInfo = stringRedisTemplate.opsForHash().get("short-link:login:" + username, token)) != null) {
                     JSONObject userInfoJsonObject = JSON.parseObject(userInfo.toString());
